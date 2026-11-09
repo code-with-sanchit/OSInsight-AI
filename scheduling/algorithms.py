@@ -38,6 +38,7 @@ def _result(name: str, workload: Workload, service_order: list[int], path: list[
     waits = compute_travel_waits(service_order, path)
     fairness = compute_jains_fairness(waits)
     stddev = round(pstdev(seek_steps), 2) if len(seek_steps) > 1 else 0.0
+    maximum_wait = round(max(waits), 2) if waits else 0.0
     return ScheduleResult(
         algorithm=name,
         service_order=tuple(service_order),
@@ -47,6 +48,7 @@ def _result(name: str, workload: Workload, service_order: list[int], path: list[
         fairness=round(fairness, 3),
         turnaround_estimate=round(sum(waits) / len(waits), 2) if waits else 0.0,
         seek_stddev=stddev,
+        max_wait=maximum_wait,
     )
 
 

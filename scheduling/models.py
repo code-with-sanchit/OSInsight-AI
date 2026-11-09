@@ -94,7 +94,13 @@ class ScheduleResult:
     fairness: float
     turnaround_estimate: float
     seek_stddev: float = 0.0
+    max_wait: float = 0.0
 
     @property
     def throughput(self) -> float:
         return len(self.service_order) / max(self.total_seek, 1)
+
+    @property
+    def wait_ratio(self) -> float:
+        """Ratio of maximum request wait to average turnaround estimate (starvation proxy)."""
+        return round(self.max_wait / max(self.turnaround_estimate, 0.001), 2)
