@@ -9,6 +9,7 @@ import customtkinter as ctk
 from scheduling.ai_advisor import AIAdvisor
 from scheduling.algorithms import run_algorithm
 from scheduling.models import Workload
+from scheduling.visualizer import DiskVisualizer
 from scheduling.workloads import WorkloadGenerator, WorkloadPattern
 from utils.reporting import export_simulation_pdf
 
@@ -64,7 +65,9 @@ class Dashboard(ctk.CTk):
         self.recommendation = ctk.CTkLabel(workspace, text="Preparing simulation...", justify="left", anchor="w", font=ctk.CTkFont(size=16, weight="bold"))
         self.recommendation.pack(fill="x", padx=22, pady=(20, 5))
         self.insights = ctk.CTkLabel(workspace, text="", text_color="#94A3B8", anchor="w")
-        self.insights.pack(fill="x", padx=22, pady=(0, 14))
+        self.insights.pack(fill="x", padx=22, pady=(0, 6))
+        self.cylinder_map = ctk.CTkLabel(workspace, text="", font=ctk.CTkFont(family="Cascadia Mono", size=11), text_color="#38BDF8", anchor="w")
+        self.cylinder_map.pack(fill="x", padx=22, pady=(0, 10))
         self.table = tk.Text(workspace, height=19, bg="#111827", fg="#E5E7EB", insertbackground="white", relief="flat", font=("Cascadia Mono", 11), padx=14, pady=14)
         self.table.pack(fill="both", expand=True, padx=22, pady=(0, 12))
         self.path = ctk.CTkLabel(workspace, text="", justify="left", wraplength=760, anchor="w", text_color="#CBD5E1")
@@ -121,6 +124,7 @@ class Dashboard(ctk.CTk):
         selected = run_algorithm(recommendation.algorithm, workload)
         self.recommendation.configure(text=f"AI recommends {recommendation.algorithm}  ·  {recommendation.confidence:.1f}% confidence\n{recommendation.explanation}")
         self.insights.configure(text=self.advisor.workload_insights(workload))
+        self.cylinder_map.configure(text=DiskVisualizer.render_cylinder_map(workload, width=54))
         self.table.delete("1.0", "end")
         header = f"{'ALGORITHM':<12} {'TOTAL SEEK':>10} {'AVG SEEK':>9} {'FAIRNESS':>9} {'AVG WAIT':>9} {'MAX WAIT':>9} {'STD DEV':>8} {'THROUGHPUT':>11}\n"
         self.table.insert("end", header)
