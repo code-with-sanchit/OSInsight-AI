@@ -7,22 +7,35 @@ from .models import ScheduleResult, Workload
 ALGORITHMS = ("FCFS", "SSTF", "SCAN", "C-SCAN", "LOOK", "C-LOOK")
 
 
-def _result(name: str, workload: Workload, service_order: list[int], path: list[int]) -> ScheduleResult:
-    seek_steps = [abs(right - left) for left, right in zip(path, path[1:])]
-    total_seek = sum(seek_steps)
-    # Per-request wait is movement completed before its service. The service path can
-    # contain a sweep boundary or circular wrap, so map each request to its actual stop.
+def compute_travel_waits(service_order: list[int], path: list[int]) -> list[float]:
+    """Compute seek distance elapsed before each request in service_order is reached."""
     travelled, path_index = 0, 0
     waits: list[float] = []
     for target in service_order:
-        waits.append(travelled)
+        waits.append(float(travelled))
         while path_index < len(path) - 1:
             travelled += abs(path[path_index + 1] - path[path_index])
             path_index += 1
             if path[path_index] == target:
                 break
+    return waits
+
+
+def compute_jains_fairness(waits: list[float]) -> float:
+    """Calculate Jain's fairness index over individual request wait values."""
+    if not waits:
+        return 1.0
     squared_sum = sum(wait * wait for wait in waits)
-    fairness = (sum(waits) ** 2) / (len(waits) * squared_sum) if squared_sum else 1.0
+    if squared_sum == 0:
+        return 1.0
+    return (sum(waits) ** 2) / (len(waits) * squared_sum)
+
+
+def _result(name: str, workload: Workload, service_order: list[int], path: list[int]) -> ScheduleResult:
+    seek_steps = [abs(right - left) for left, right in zip(path, path[1:])]
+    total_seek = sum(seek_steps)
+    waits = compute_travel_waits(service_order, path)
+    fairness = compute_jains_fairness(waits)
     return ScheduleResult(
         algorithm=name,
         service_order=tuple(service_order),
