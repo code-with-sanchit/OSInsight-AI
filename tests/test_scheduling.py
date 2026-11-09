@@ -61,3 +61,18 @@ def test_f_scan_two_stage_execution() -> None:
     assert res.service_order[:2] == (90, 10)
     # Queue 2 is [20, 80]: from 10 moving up -> 20, 80
     assert res.service_order[2:] == (20, 80)
+
+
+def test_custom_profile_and_classifier() -> None:
+    advisor = AIAdvisor()
+    advisor.register_profile("ThroughputFocus", seek_w=0.8, fairness_w=0.05, latency_w=0.1, starvation_w=0.05)
+    rec = advisor.recommend(workload(), preference="ThroughputFocus")
+    assert rec.algorithm in ALGORITHMS
+
+    classification = AIAdvisor.classify_workload(workload())
+    assert "locality" in classification
+    assert "direction_bias" in classification
+    assert classification["mean_cylinder"] > 0
+
+    with pytest.raises(ValueError, match="Total weights must sum to a positive value"):
+        advisor.register_profile("Bad", 0, 0, 0, 0)
