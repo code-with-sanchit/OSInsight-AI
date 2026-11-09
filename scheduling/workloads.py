@@ -95,3 +95,41 @@ class WorkloadGenerator:
         all_reqs = local_requests + outlier_requests
         self.rng.shuffle(all_reqs)
         return Workload.from_cylinders(all_reqs, head=h, disk_size=disk_size, direction=direction)
+
+    def generate_ping_pong(
+        self,
+        count: int = 16,
+        disk_size: int = 200,
+        head: int | None = None,
+        direction: str = "up",
+    ) -> Workload:
+        """Generate alternating extreme track requests (worst-case head oscillation stress test)."""
+        h = head if head is not None else disk_size // 2
+        cylinders = []
+        for i in range(count):
+            if i % 2 == 0:
+                cylinders.append(self.rng.randint(0, int(disk_size * 0.08)))
+            else:
+                cylinders.append(self.rng.randint(int(disk_size * 0.92), disk_size - 1))
+        return Workload.from_cylinders(cylinders, head=h, disk_size=disk_size, direction=direction)
+
+    def generate(
+        self,
+        pattern: WorkloadPattern | str,
+        count: int = 16,
+        disk_size: int = 200,
+        head: int | None = None,
+        direction: str = "up",
+    ) -> Workload:
+        """Dispatch workload generation by pattern name."""
+        pattern_str = pattern.value if isinstance(pattern, WorkloadPattern) else str(pattern).lower()
+        dispatchers = {
+            WorkloadPattern.UNIFORM.value: self.generate_uniform,
+            WorkloadPattern.LOCALIZED.value: self.generate_localized,
+            WorkloadPattern.SEQUENTIAL.value: self.generate_sequential,
+            WorkloadPattern.DATABASE_OLTP.value: self.generate_database_oltp,
+            WorkloadPattern.PING_PONG.value: self.generate_ping_pong,
+        }
+        if pattern_str not in dispatchers:
+            raise ValueError(f"Unknown workload pattern: {pattern}. Valid: {list(dispatchers.keys())}")
+        return dispatchers[pattern_str](count=count, disk_size=disk_size, head=head, direction=direction)
