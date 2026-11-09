@@ -1,0 +1,8 @@
+[project]
+name = "osinsight-ai"
+version = "2.0.0"
+description = "Explainable AI-enabled advanced disk scheduling simulator"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
