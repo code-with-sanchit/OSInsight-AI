@@ -73,6 +73,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Render ASCII trajectory steps and track map in output",
     )
+    parser.add_argument(
+        "-b", "--benchmark",
+        action="store_true",
+        help="Run comprehensive benchmark comparing all algorithms across all workload patterns",
+    )
     return parser
 
 
@@ -88,8 +93,37 @@ def format_results_table(results: Sequence[ScheduleResult], recommended: str | N
     return "\n".join(lines)
 
 
+def run_benchmark(cylinders: int = 200, count: int = 16) -> int:
+    """Run empirical benchmark comparing all algorithms over every workload distribution."""
+    gen = WorkloadGenerator(seed=12345)
+    advisor = AIAdvisor()
+    patterns = list(WorkloadPattern)
+
+    print("\n" + "=" * 80)
+    print("OSInsight-AI Multi-Workload Empirical Benchmark Suite")
+    print(f"Geometry: {cylinders} Cylinders | Requests per run: {count} | Runs: {len(patterns)} patterns")
+    print("=" * 80)
+
+    for pat in patterns:
+        wl = gen.generate(pat, count=count, disk_size=cylinders)
+        rec = advisor.recommend(wl, preference="Balanced")
+        top = rec.candidates[0]
+        print(f"\n[Pattern: {pat.value.upper()}]")
+        print(f"  AI Winner: {rec.algorithm} ({rec.confidence:.1f}% confidence)")
+        print(f"  Top Seek: {top.total_seek} cyls | Avg Wait: {top.turnaround_estimate:.2f} | Fairness: {top.fairness:.3f}")
+        for c in rec.candidates:
+            print(f"    - {c.algorithm:<11} : seek={c.total_seek:>4}, fairness={c.fairness:.3f}, wait={c.turnaround_estimate:>6.2f}")
+
+    print("\n" + "=" * 80)
+    print("Benchmark complete.")
+    return 0
+
+
 def run_cli(args: argparse.Namespace) -> int:
     """Execute disk simulation from parsed arguments and print report."""
+    if args.benchmark:
+        return run_benchmark(cylinders=args.cylinders, count=args.count)
+
     if args.pattern:
         gen = WorkloadGenerator()
         workload = gen.generate(
