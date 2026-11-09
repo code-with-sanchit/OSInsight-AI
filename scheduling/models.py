@@ -49,6 +49,25 @@ class Workload:
     ) -> "Workload":
         return cls(tuple(DiskRequest(int(value)) for value in cylinders), head, disk_size, direction)
 
+    @property
+    def cylinder_values(self) -> tuple[int, ...]:
+        """Return the tuple of request cylinder indices."""
+        return tuple(req.cylinder for req in self.requests)
+
+    @property
+    def min_cylinder(self) -> int:
+        """Lowest cylinder index requested in the workload."""
+        return min(self.cylinder_values)
+
+    @property
+    def max_cylinder(self) -> int:
+        """Highest cylinder index requested in the workload."""
+        return max(self.cylinder_values)
+
+    def contains_cylinder(self, cylinder: int) -> bool:
+        """Check if a given cylinder is present in the request queue."""
+        return cylinder in self.cylinder_values
+
 
 @dataclass(frozen=True)
 class ScheduleResult:
