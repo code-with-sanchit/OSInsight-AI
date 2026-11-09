@@ -26,19 +26,21 @@ class AIAdvisor:
     def recommend(self, workload: Workload, preference: str = "Balanced") -> Recommendation:
         candidates = tuple(run_algorithm(name, workload) for name in ALGORITHMS)
         preference = preference.title()
-        seek_weight, fairness_weight, latency_weight = {
-            "Performance": (0.65, 0.10, 0.25),
-            "Fairness": (0.25, 0.55, 0.20),
-            "Balanced": (0.45, 0.30, 0.25),
-        }.get(preference, (0.45, 0.30, 0.25))
+        seek_weight, fairness_weight, latency_weight, starvation_weight = {
+            "Performance": (0.60, 0.10, 0.20, 0.10),
+            "Fairness": (0.20, 0.50, 0.15, 0.15),
+            "Balanced": (0.40, 0.25, 0.20, 0.15),
+        }.get(preference, (0.40, 0.25, 0.20, 0.15))
         max_seek = max(result.total_seek for result in candidates) or 1
         max_latency = max(result.turnaround_estimate for result in candidates) or 1
+        max_wait_all = max(result.max_wait for result in candidates) or 1
 
         def score(result: ScheduleResult) -> float:
             return (
                 seek_weight * (1 - result.total_seek / max_seek)
                 + fairness_weight * result.fairness
                 + latency_weight * (1 - result.turnaround_estimate / max_latency)
+                + starvation_weight * (1 - result.max_wait / max_wait_all)
             )
 
         ranked = sorted(candidates, key=lambda item: (score(item), item.fairness), reverse=True)
