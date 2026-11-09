@@ -51,3 +51,18 @@ class WorkloadGenerator:
             for _ in range(count)
         ]
         return Workload.from_cylinders(cylinders, head=h, disk_size=disk_size, direction=direction)
+
+    def generate_sequential(
+        self,
+        count: int = 16,
+        disk_size: int = 200,
+        start: int | None = None,
+        stride: int = 2,
+        head: int | None = None,
+        direction: str = "up",
+    ) -> Workload:
+        """Generate contiguous or strided sequential requests typical of file streaming/logging."""
+        h = head if head is not None else self.rng.randint(0, disk_size - 1)
+        base = start if start is not None else self.rng.randint(0, max(1, disk_size - (count * stride)))
+        cylinders = [(base + i * stride) % disk_size for i in range(count)]
+        return Workload.from_cylinders(cylinders, head=h, disk_size=disk_size, direction=direction)
