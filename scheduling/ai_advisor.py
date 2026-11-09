@@ -23,14 +23,33 @@ class AIAdvisor:
     transparent: every recommendation can be reproduced from the displayed scores.
     """
 
+    DEFAULT_PROFILES: dict[str, tuple[float, float, float, float]] = {
+        "Performance": (0.60, 0.10, 0.20, 0.10),
+        "Fairness": (0.20, 0.50, 0.15, 0.15),
+        "Balanced": (0.40, 0.25, 0.20, 0.15),
+    }
+
+    def __init__(self, profiles: dict[str, tuple[float, float, float, float]] | None = None) -> None:
+        self.profiles = dict(self.DEFAULT_PROFILES)
+        if profiles:
+            self.profiles.update(profiles)
+
+    def register_profile(
+        self, name: str, seek_w: float, fairness_w: float, latency_w: float, starvation_w: float
+    ) -> None:
+        """Register or override a custom multi-objective weighting profile."""
+        total = seek_w + fairness_w + latency_w + starvation_w
+        if total <= 0:
+            raise ValueError("Total weights must sum to a positive value.")
+        normalized = (seek_w / total, fairness_w / total, latency_w / total, starvation_w / total)
+        self.profiles[name.title()] = normalized
+
     def recommend(self, workload: Workload, preference: str = "Balanced") -> Recommendation:
         candidates = tuple(run_algorithm(name, workload) for name in ALGORITHMS)
-        preference = preference.title()
-        seek_weight, fairness_weight, latency_weight, starvation_weight = {
-            "Performance": (0.60, 0.10, 0.20, 0.10),
-            "Fairness": (0.20, 0.50, 0.15, 0.15),
-            "Balanced": (0.40, 0.25, 0.20, 0.15),
-        }.get(preference, (0.40, 0.25, 0.20, 0.15))
+        preference_title = preference.title()
+        seek_weight, fairness_weight, latency_weight, starvation_weight = self.profiles.get(
+            preference_title, self.DEFAULT_PROFILES["Balanced"]
+        )
         max_seek = max(result.total_seek for result in candidates) or 1
         max_latency = max(result.turnaround_estimate for result in candidates) or 1
         max_wait_all = max(result.max_wait for result in candidates) or 1
