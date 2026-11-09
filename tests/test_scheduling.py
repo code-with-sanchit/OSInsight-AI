@@ -41,3 +41,13 @@ def test_compute_travel_waits_and_fairness() -> None:
     assert waits == [0.0, 10.0]
     fairness = compute_jains_fairness([10.0, 10.0, 10.0])
     assert pytest.approx(fairness, 0.01) == 1.0
+
+
+def test_n_step_scan_chunking() -> None:
+    wl = Workload.from_cylinders([10, 90, 20, 80, 30, 70], head=50, disk_size=100, direction="up")
+    res = run_algorithm("N-STEP-SCAN", wl)
+    assert len(res.service_order) == 6
+    assert set(res.service_order) == {10, 90, 20, 80, 30, 70}
+    # First chunk [10, 90, 20, 80]: from 50 moving up -> 80, 90 then 20, 10
+    first_chunk_serviced = res.service_order[:4]
+    assert first_chunk_serviced == (80, 90, 20, 10)
