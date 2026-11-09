@@ -86,3 +86,60 @@ def format_results_table(results: Sequence[ScheduleResult], recommended: str | N
         lines.append(row)
     lines.append("=" * len(header))
     return "\n".join(lines)
+
+
+def run_cli(args: argparse.Namespace) -> int:
+    """Execute disk simulation from parsed arguments and print report."""
+    if args.pattern:
+        gen = WorkloadGenerator()
+        workload = gen.generate(
+            args.pattern,
+            count=args.count,
+            disk_size=args.cylinders,
+            head=args.head,
+            direction=args.direction,
+        )
+    else:
+        cylinders = [int(p.strip()) for p in args.requests.split(",") if p.strip()]
+        workload = Workload.from_cylinders(
+            cylinders, head=args.head, disk_size=args.cylinders, direction=args.direction
+        )
+
+    print("\n" + DiskVisualizer.render_cylinder_map(workload))
+    print(f"Initial Head: {workload.head} | Geometry: {workload.cylinders} cyls | Direction: {workload.direction}")
+
+    advisor = AIAdvisor()
+    rec = advisor.recommend(workload, preference=args.objective)
+    print(f"\n[AI Advisor]: Recommends {rec.algorithm} ({rec.confidence:.1f}% confidence)")
+    print(f"Explanation: {rec.explanation}")
+
+    target_algo = args.algorithm.upper()
+    if target_algo == "ALL":
+        results = rec.candidates
+    else:
+        results = (run_algorithm(target_algo, workload),)
+
+    print("\n" + format_results_table(results, recommended=rec.algorithm))
+
+    if args.visualize:
+        top_res = next(r for r in results if r.algorithm == rec.algorithm) if target_algo == "ALL" else results[0]
+        print("\n" + DiskVisualizer.render_path_steps(top_res, disk_size=workload.cylinders))
+        if target_algo == "ALL":
+            print("\n" + DiskVisualizer.render_comparison_bars(list(results)))
+
+    return 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """CLI entrypoint."""
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    try:
+        return run_cli(args)
+    except ValueError as err:
+        print(f"Error: {err}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
