@@ -9,6 +9,7 @@ import customtkinter as ctk
 from scheduling.ai_advisor import AIAdvisor
 from scheduling.algorithms import run_algorithm
 from scheduling.models import Workload
+from scheduling.workloads import WorkloadGenerator, WorkloadPattern
 from utils.reporting import export_simulation_pdf
 
 
@@ -48,8 +49,14 @@ class Dashboard(ctk.CTk):
         self.preference = ctk.CTkOptionMenu(controls, values=["Balanced", "Performance", "Fairness"])
         ctk.CTkLabel(controls, text="AI objective").pack(anchor="w", padx=20, pady=(12, 2))
         self.preference.pack(fill="x", padx=20)
-        ctk.CTkButton(controls, text="Run AI recommendation", command=self.run_simulation).pack(fill="x", padx=20, pady=(20, 8))
-        ctk.CTkButton(controls, text="Generate realistic workload", fg_color="#334155", command=self.generate_workload).pack(fill="x", padx=20, pady=4)
+        self.pattern_menu = ctk.CTkOptionMenu(
+            controls,
+            values=["Realistic Mixed", "Uniform", "Localized", "Sequential", "Database OLTP", "Ping-Pong"],
+        )
+        ctk.CTkLabel(controls, text="Workload pattern").pack(anchor="w", padx=20, pady=(8, 2))
+        self.pattern_menu.pack(fill="x", padx=20)
+        ctk.CTkButton(controls, text="Run AI recommendation", command=self.run_simulation).pack(fill="x", padx=20, pady=(16, 6))
+        ctk.CTkButton(controls, text="Generate workload", fg_color="#334155", command=self.generate_workload).pack(fill="x", padx=20, pady=4)
         ctk.CTkButton(controls, text="Export simulation report", fg_color="#334155", command=self.export_report).pack(fill="x", padx=20, pady=4)
 
         workspace = ctk.CTkFrame(content)
@@ -76,10 +83,28 @@ class Dashboard(ctk.CTk):
         return Workload.from_cylinders(values, head=int(self.head.get()), disk_size=disk_size, direction=self.direction.get())
 
     def generate_workload(self) -> None:
-        disk_size, head = 200, random.randint(60, 140)
-        center = random.randint(35, 165)
-        queue = [max(0, min(disk_size - 1, int(random.gauss(center, 20)))) for _ in range(14)]
-        queue += [random.randrange(disk_size) for _ in range(4)]
+        disk_size = int(self.disk_size.get()) if self.disk_size.get().isdigit() else 200
+        pattern_choice = self.pattern_menu.get()
+        gen = WorkloadGenerator()
+
+        pattern_mapping = {
+            "Uniform": WorkloadPattern.UNIFORM,
+            "Localized": WorkloadPattern.LOCALIZED,
+            "Sequential": WorkloadPattern.SEQUENTIAL,
+            "Database OLTP": WorkloadPattern.DATABASE_OLTP,
+            "Ping-Pong": WorkloadPattern.PING_PONG,
+        }
+
+        if pattern_choice in pattern_mapping:
+            wl = gen.generate(pattern_mapping[pattern_choice], count=16, disk_size=disk_size)
+            head = wl.head
+            queue = [req.cylinder for req in wl.requests]
+        else:
+            head = random.randint(60, 140)
+            center = random.randint(35, 165)
+            queue = [max(0, min(disk_size - 1, int(random.gauss(center, 20)))) for _ in range(14)]
+            queue += [random.randrange(disk_size) for _ in range(4)]
+
         for entry, value in ((self.head, str(head)), (self.disk_size, str(disk_size)), (self.requests, ", ".join(map(str, queue)))):
             entry.delete(0, "end")
             entry.insert(0, value)
