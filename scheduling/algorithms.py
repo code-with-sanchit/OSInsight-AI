@@ -88,6 +88,29 @@ def _sweep(workload: Workload, *, circular: bool, look: bool) -> tuple[list[int]
     return order, path
 
 
+def _n_step_scan(workload: Workload, step_size: int = 4) -> tuple[list[int], list[int]]:
+    """Segment queue into groups of size N and service each segment using SCAN."""
+    all_requests = [req.cylinder for req in workload.requests]
+    current_head = workload.head
+    overall_order: list[int] = []
+    overall_path: list[int] = [current_head]
+
+    for i in range(0, len(all_requests), step_size):
+        chunk = all_requests[i : i + step_size]
+        lower = sorted(c for c in chunk if c < current_head)
+        upper = sorted(c for c in chunk if c >= current_head)
+        moving_up = workload.direction == "up"
+        first, second = (upper, lower[::-1]) if moving_up else (lower[::-1], upper)
+        batch_order = first + second
+        for cylinder in batch_order:
+            overall_order.append(cylinder)
+            overall_path.append(cylinder)
+        if batch_order:
+            current_head = batch_order[-1]
+
+    return overall_order, overall_path
+
+
 def run_algorithm(name: str, workload: Workload) -> ScheduleResult:
     """Run a deterministic scheduling policy against one immutable workload."""
     normalized = name.upper()
