@@ -111,6 +111,35 @@ def _n_step_scan(workload: Workload, step_size: int = 4) -> tuple[list[int], lis
     return overall_order, overall_path
 
 
+def _f_scan(workload: Workload) -> tuple[list[int], list[int]]:
+    """F-SCAN: Two queues; freezes active queue while servicing, then processes deferred queue."""
+    all_requests = [req.cylinder for req in workload.requests]
+    if len(all_requests) <= 2:
+        return _sweep(workload, circular=False, look=True)
+
+    mid = max(1, len(all_requests) // 2)
+    q1 = all_requests[:mid]
+    q2 = all_requests[mid:]
+
+    current_head = workload.head
+    overall_order: list[int] = []
+    overall_path: list[int] = [current_head]
+
+    for q in (q1, q2):
+        lower = sorted(c for c in q if c < current_head)
+        upper = sorted(c for c in q if c >= current_head)
+        moving_up = workload.direction == "up"
+        first, second = (upper, lower[::-1]) if moving_up else (lower[::-1], upper)
+        batch = first + second
+        for c in batch:
+            overall_order.append(c)
+            overall_path.append(c)
+        if batch:
+            current_head = batch[-1]
+
+    return overall_order, overall_path
+
+
 def run_algorithm(name: str, workload: Workload) -> ScheduleResult:
     """Run a deterministic scheduling policy against one immutable workload."""
     normalized = name.upper()
