@@ -12,6 +12,12 @@ class DiskRequest:
     arrival: float = 0.0
     priority: int = 0
 
+    def __post_init__(self) -> None:
+        if self.cylinder < 0:
+            raise ValueError(f"Cylinder index must be non-negative, got {self.cylinder}.")
+        if self.arrival < 0:
+            raise ValueError(f"Arrival time cannot be negative, got {self.arrival}.")
+
 
 @dataclass(frozen=True)
 class Workload:
