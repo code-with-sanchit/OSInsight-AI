@@ -51,3 +51,13 @@ def test_n_step_scan_chunking() -> None:
     # First chunk [10, 90, 20, 80]: from 50 moving up -> 80, 90 then 20, 10
     first_chunk_serviced = res.service_order[:4]
     assert first_chunk_serviced == (80, 90, 20, 10)
+
+
+def test_f_scan_two_stage_execution() -> None:
+    wl = Workload.from_cylinders([10, 90, 20, 80], head=50, disk_size=100, direction="up")
+    res = run_algorithm("F-SCAN", wl)
+    assert len(res.service_order) == 4
+    # Queue 1 is [10, 90]: from 50 moving up -> 90 then 10
+    assert res.service_order[:2] == (90, 10)
+    # Queue 2 is [20, 80]: from 10 moving up -> 20, 80
+    assert res.service_order[2:] == (20, 80)
