@@ -26,10 +26,14 @@ def export_simulation_pdf(workload: Workload, recommendation: Recommendation, de
         f"AI recommendation: {recommendation.algorithm} ({recommendation.confidence:.1f}% confidence)",
         recommendation.explanation,
         "",
-        "Algorithm       Total seek    Avg seek    Fairness    Avg wait",
+        "Algorithm       Total seek    Avg seek    Fairness    Avg wait    Max wait    Std dev",
     ]
     for result in recommendation.candidates:
-        lines.append(f"{result.algorithm:<14} {result.total_seek:<13} {result.average_seek:<11.2f} {result.fairness:<11.3f} {result.turnaround_estimate:.2f}")
+        lines.append(
+            f"{result.algorithm:<14} {result.total_seek:<13} {result.average_seek:<11.2f} "
+            f"{result.fairness:<11.3f} {result.turnaround_estimate:<11.2f} {result.max_wait:<11.2f} "
+            f"{result.seek_stddev:.2f}"
+        )
     for line in lines:
         pdf.drawString(48, y, line[:115])
         y -= 18
