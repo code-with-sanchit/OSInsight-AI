@@ -1,3 +1,5 @@
+import pytest
+
 from scheduling.ai_advisor import AIAdvisor
 from scheduling.algorithms import ALGORITHMS, run_algorithm
 from scheduling.models import Workload
@@ -23,3 +25,19 @@ def test_ai_recommendation_is_explainable() -> None:
     assert recommendation.algorithm in ALGORITHMS
     assert 0 < recommendation.confidence <= 100
     assert "fairness" in recommendation.explanation
+
+
+def test_metrics_max_wait_and_variance() -> None:
+    res = run_algorithm("FCFS", workload())
+    assert res.max_wait >= res.turnaround_estimate
+    assert res.seek_stddev >= 0.0
+    assert res.wait_ratio >= 1.0
+
+
+def test_compute_travel_waits_and_fairness() -> None:
+    from scheduling.algorithms import compute_jains_fairness, compute_travel_waits
+
+    waits = compute_travel_waits([10, 20], [0, 10, 20])
+    assert waits == [0.0, 10.0]
+    fairness = compute_jains_fairness([10.0, 10.0, 10.0])
+    assert pytest.approx(fairness, 0.01) == 1.0
