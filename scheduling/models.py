@@ -68,6 +68,21 @@ class Workload:
         """Check if a given cylinder is present in the request queue."""
         return cylinder in self.cylinder_values
 
+    @property
+    def request_count(self) -> int:
+        """Total number of pending disk requests."""
+        return len(self.requests)
+
+    @property
+    def span(self) -> int:
+        """Difference between highest and lowest requested cylinder."""
+        return self.max_cylinder - self.min_cylinder
+
+    @property
+    def nearest_request_distance(self) -> int:
+        """Seek distance from initial head position to nearest pending cylinder."""
+        return min(abs(self.head - c) for c in self.cylinder_values)
+
 
 @dataclass(frozen=True)
 class ScheduleResult:
