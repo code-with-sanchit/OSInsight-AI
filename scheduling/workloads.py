@@ -33,3 +33,21 @@ class WorkloadGenerator:
         h = head if head is not None else self.rng.randint(0, disk_size - 1)
         cylinders = [self.rng.randint(0, disk_size - 1) for _ in range(count)]
         return Workload.from_cylinders(cylinders, head=h, disk_size=disk_size, direction=direction)
+
+    def generate_localized(
+        self,
+        count: int = 16,
+        disk_size: int = 200,
+        cluster_center: int | None = None,
+        cluster_std: float = 15.0,
+        head: int | None = None,
+        direction: str = "up",
+    ) -> Workload:
+        """Generate requests exhibiting high spatial locality clustered around a cylinder hotspot."""
+        h = head if head is not None else self.rng.randint(0, disk_size - 1)
+        center = cluster_center if cluster_center is not None else self.rng.randint(int(disk_size * 0.2), int(disk_size * 0.8))
+        cylinders = [
+            max(0, min(disk_size - 1, int(self.rng.gauss(center, cluster_std))))
+            for _ in range(count)
+        ]
+        return Workload.from_cylinders(cylinders, head=h, disk_size=disk_size, direction=direction)
