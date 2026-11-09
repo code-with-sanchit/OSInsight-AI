@@ -63,3 +63,31 @@ class AIAdvisor:
             f"{len(positions)} requests | mean cylinder {fmean(positions):.1f} | "
             f"spread {pstdev(positions) if len(positions) > 1 else 0:.1f} | head {workload.head}"
         )
+
+    @classmethod
+    def classify_workload(cls, workload: Workload) -> dict[str, str | float | bool]:
+        """Profile workload geometry, spatial distribution, and clustering characteristics."""
+        positions = [req.cylinder for req in workload.requests]
+        mean_pos = fmean(positions)
+        spread = pstdev(positions) if len(positions) > 1 else 0.0
+        normalized_spread = spread / workload.cylinders
+
+        if normalized_spread < 0.12:
+            locality_label = "Highly Clustered"
+        elif normalized_spread < 0.25:
+            locality_label = "Moderately Clustered"
+        else:
+            locality_label = "Uniform / Dispersed"
+
+        mid = workload.cylinders / 2
+        direction_bias = "Upper Disk" if mean_pos > mid * 1.15 else ("Lower Disk" if mean_pos < mid * 0.85 else "Centered")
+        outliers = any(abs(pos - mean_pos) > 2.0 * max(spread, 1.0) for pos in positions)
+
+        return {
+            "locality": locality_label,
+            "direction_bias": direction_bias,
+            "mean_cylinder": round(mean_pos, 1),
+            "spread": round(spread, 2),
+            "normalized_spread": round(normalized_spread, 3),
+            "has_outliers": outliers,
+        }
