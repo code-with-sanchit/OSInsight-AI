@@ -66,3 +66,32 @@ class WorkloadGenerator:
         base = start if start is not None else self.rng.randint(0, max(1, disk_size - (count * stride)))
         cylinders = [(base + i * stride) % disk_size for i in range(count)]
         return Workload.from_cylinders(cylinders, head=h, disk_size=disk_size, direction=direction)
+
+    def generate_database_oltp(
+        self,
+        count: int = 18,
+        disk_size: int = 200,
+        head: int | None = None,
+        direction: str = "up",
+    ) -> Workload:
+        """Generate mixed database access: high-frequency index cluster + remote log flushes."""
+        h = head if head is not None else self.rng.randint(0, disk_size - 1)
+        cluster_center = self.rng.randint(int(disk_size * 0.3), int(disk_size * 0.7))
+        local_count = int(count * 0.75)
+        outlier_count = count - local_count
+
+        local_requests = [
+            max(0, min(disk_size - 1, int(self.rng.gauss(cluster_center, 12))))
+            for _ in range(local_count)
+        ]
+        # Distant outliers near disk boundaries (e.g. journaling / WAL log)
+        outlier_requests = [
+            self.rng.choice([
+                self.rng.randint(0, int(disk_size * 0.1)),
+                self.rng.randint(int(disk_size * 0.9), disk_size - 1),
+            ])
+            for _ in range(outlier_count)
+        ]
+        all_reqs = local_requests + outlier_requests
+        self.rng.shuffle(all_reqs)
+        return Workload.from_cylinders(all_reqs, head=h, disk_size=disk_size, direction=direction)
