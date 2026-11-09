@@ -1,8 +1,32 @@
 [project]
 name = "osinsight-ai"
 version = "2.0.0"
-description = "Explainable AI-enabled advanced disk scheduling simulator"
+description = "Explainable AI-enabled advanced disk scheduling simulator and multi-workload benchmark suite"
+readme = "README.md"
 requires-python = ">=3.12"
+authors = [
+    { name = "Sanchit Goyal", email = "contact.sanchitgoyal@gmail.com" }
+]
+keywords = [
+    "operating-systems",
+    "disk-scheduling",
+    "fcfs",
+    "sstf",
+    "scan",
+    "c-scan",
+    "look",
+    "c-look",
+    "ai-advisor",
+    "simulator",
+]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Operating System",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+[project.scripts]
+osinsight = "scheduling.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
