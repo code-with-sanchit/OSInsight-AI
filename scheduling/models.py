@@ -18,6 +18,11 @@ class DiskRequest:
         if self.arrival < 0:
             raise ValueError(f"Arrival time cannot be negative, got {self.arrival}.")
 
+    @classmethod
+    def from_sequence(cls, cylinders: Iterable[int]) -> tuple["DiskRequest", ...]:
+        """Convert an iterable of integer cylinder indices into a tuple of DiskRequests."""
+        return tuple(cls(int(cylinder)) for cylinder in cylinders)
+
 
 @dataclass(frozen=True)
 class Workload:
