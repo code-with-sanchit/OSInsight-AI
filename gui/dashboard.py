@@ -97,11 +97,11 @@ class Dashboard(ctk.CTk):
         self.recommendation.configure(text=f"AI recommends {recommendation.algorithm}  ·  {recommendation.confidence:.1f}% confidence\n{recommendation.explanation}")
         self.insights.configure(text=self.advisor.workload_insights(workload))
         self.table.delete("1.0", "end")
-        self.table.insert("end", "ALGORITHM   TOTAL SEEK   AVG SEEK   FAIRNESS   AVG WAIT   THROUGHPUT\n")
-        self.table.insert("end", "─" * 74 + "\n")
+        self.table.insert("end", "ALGORITHM      TOTAL SEEK   AVG SEEK   FAIRNESS   AVG WAIT   THROUGHPUT\n")
+        self.table.insert("end", "─" * 78 + "\n")
         for result in recommendation.candidates:
             marker = " ← AI choice" if result.algorithm == recommendation.algorithm else ""
-            self.table.insert("end", f"{result.algorithm:<10} {result.total_seek:>10} {result.average_seek:>10.2f} {result.fairness:>10.3f} {result.turnaround_estimate:>10.2f} {result.throughput:>12.4f}{marker}\n")
+            self.table.insert("end", f"{result.algorithm:<13} {result.total_seek:>9} {result.average_seek:>10.2f} {result.fairness:>10.3f} {result.turnaround_estimate:>10.2f} {result.throughput:>12.4f}{marker}\n")
         self.path.configure(text=f"Selected service path: {' → '.join(map(str, selected.path))}")
 
     def export_report(self) -> None:
