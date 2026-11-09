@@ -5,7 +5,7 @@ from statistics import pstdev
 
 from .models import ScheduleResult, Workload
 
-ALGORITHMS = ("FCFS", "SSTF", "SCAN", "C-SCAN", "LOOK", "C-LOOK")
+ALGORITHMS = ("FCFS", "SSTF", "SCAN", "C-SCAN", "LOOK", "C-LOOK", "N-STEP-SCAN", "F-SCAN")
 
 
 def compute_travel_waits(service_order: list[int], path: list[int]) -> list[float]:
@@ -150,6 +150,8 @@ def run_algorithm(name: str, workload: Workload) -> ScheduleResult:
         "C-SCAN": lambda item: _sweep(item, circular=True, look=False),
         "LOOK": lambda item: _sweep(item, circular=False, look=True),
         "C-LOOK": lambda item: _sweep(item, circular=True, look=True),
+        "N-STEP-SCAN": lambda item: _n_step_scan(item, step_size=4),
+        "F-SCAN": _f_scan,
     }
     if normalized not in runners:
         raise ValueError(f"Unknown algorithm: {name}. Choose one of {', '.join(ALGORITHMS)}.")
