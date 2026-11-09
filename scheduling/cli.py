@@ -74,3 +74,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Render ASCII trajectory steps and track map in output",
     )
     return parser
+
+
+def format_results_table(results: Sequence[ScheduleResult], recommended: str | None = None) -> str:
+    """Format simulation results into a clean terminal table."""
+    header = f"{'ALGORITHM':<12} {'TOTAL SEEK':>10} {'AVG SEEK':>9} {'FAIRNESS':>9} {'AVG WAIT':>9} {'MAX WAIT':>9} {'STD DEV':>8} {'THROUGHPUT':>11}"
+    lines = ["=" * len(header), header, "-" * len(header)]
+    for r in results:
+        marker = " <-- [AI Choice]" if r.algorithm == recommended else ""
+        row = f"{r.algorithm:<12} {r.total_seek:>10} {r.average_seek:>9.2f} {r.fairness:>9.3f} {r.turnaround_estimate:>9.2f} {r.max_wait:>9.2f} {r.seek_stddev:>8.2f} {r.throughput:>11.4f}{marker}"
+        lines.append(row)
+    lines.append("=" * len(header))
+    return "\n".join(lines)
