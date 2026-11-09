@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from statistics import pstdev
 
 from .models import ScheduleResult, Workload
 
@@ -36,6 +37,7 @@ def _result(name: str, workload: Workload, service_order: list[int], path: list[
     total_seek = sum(seek_steps)
     waits = compute_travel_waits(service_order, path)
     fairness = compute_jains_fairness(waits)
+    stddev = round(pstdev(seek_steps), 2) if len(seek_steps) > 1 else 0.0
     return ScheduleResult(
         algorithm=name,
         service_order=tuple(service_order),
@@ -44,6 +46,7 @@ def _result(name: str, workload: Workload, service_order: list[int], path: list[
         average_seek=round(total_seek / len(service_order), 2),
         fairness=round(fairness, 3),
         turnaround_estimate=round(sum(waits) / len(waits), 2) if waits else 0.0,
+        seek_stddev=stddev,
     )
 
 

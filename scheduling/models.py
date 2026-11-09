@@ -93,6 +93,7 @@ class ScheduleResult:
     average_seek: float
     fairness: float
     turnaround_estimate: float
+    seek_stddev: float = 0.0
 
     @property
     def throughput(self) -> float:
