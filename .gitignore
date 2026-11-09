@@ -1,11 +1,10 @@
 __pycache__/
 *.py[cod]
 .venv/
-data/*.csv
-!data/sample_monitoring_history.csv
-models/*.joblib
-reports/*.csv
+.pytest_cache/
 reports/*.pdf
-screenshots/*.png
+output/*.pdf
+!output/pdf/OSInsight_AI_Advanced_Disk_Scheduling_Report.pdf
 .artifact-build/
 .codex-finalizer/
+*.tmp
