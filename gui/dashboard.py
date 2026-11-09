@@ -122,11 +122,13 @@ class Dashboard(ctk.CTk):
         self.recommendation.configure(text=f"AI recommends {recommendation.algorithm}  ·  {recommendation.confidence:.1f}% confidence\n{recommendation.explanation}")
         self.insights.configure(text=self.advisor.workload_insights(workload))
         self.table.delete("1.0", "end")
-        self.table.insert("end", "ALGORITHM      TOTAL SEEK   AVG SEEK   FAIRNESS   AVG WAIT   THROUGHPUT\n")
-        self.table.insert("end", "─" * 78 + "\n")
+        header = f"{'ALGORITHM':<12} {'TOTAL SEEK':>10} {'AVG SEEK':>9} {'FAIRNESS':>9} {'AVG WAIT':>9} {'MAX WAIT':>9} {'STD DEV':>8} {'THROUGHPUT':>11}\n"
+        self.table.insert("end", header)
+        self.table.insert("end", "─" * (len(header) - 1) + "\n")
         for result in recommendation.candidates:
             marker = " ← AI choice" if result.algorithm == recommendation.algorithm else ""
-            self.table.insert("end", f"{result.algorithm:<13} {result.total_seek:>9} {result.average_seek:>10.2f} {result.fairness:>10.3f} {result.turnaround_estimate:>10.2f} {result.throughput:>12.4f}{marker}\n")
+            row = f"{result.algorithm:<12} {result.total_seek:>10} {result.average_seek:>9.2f} {result.fairness:>9.3f} {result.turnaround_estimate:>9.2f} {result.max_wait:>9.2f} {result.seek_stddev:>8.2f} {result.throughput:>11.4f}{marker}\n"
+            self.table.insert("end", row)
         self.path.configure(text=f"Selected service path: {' → '.join(map(str, selected.path))}")
 
     def export_report(self) -> None:
